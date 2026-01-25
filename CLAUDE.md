@@ -26,3 +26,7 @@ python -m ielts_agent progress
 - **Database**: Every command calls `init_db()`. User lookup/creation happens at start of each command.
 - **Agents**: Instantiated per command in `main.py`, not reused.
 - **Progress**: Call `update_progress(user_id, skill, score)` after scoring.
+
+## Git
+
+- **Commit author**: Always use `mianlang@foxmail.com` for git commits.
