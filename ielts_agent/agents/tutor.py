@@ -1,12 +1,12 @@
 """Tutor Agent - Conversational Q&A for IELTS concepts."""
 
-from typing import Optional
+from typing import Optional, List
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_openai import ChatOpenAI
 
 from ielts_agent.llm.client import get_llm
-from ielts_agent.prompts.ielts_prompts import TUTOR_SYSTEM_PROMPT
+from ielts_agent.prompts.ielts_prompts import TUTOR_SYSTEM_PROMPT, PROACTIVE_TUTOR_SYSTEM_PROMPT
 
 
 class TutorAgent:
@@ -20,15 +20,18 @@ class TutorAgent:
     - Study techniques and tips
     """
 
-    def __init__(self, llm: Optional[ChatOpenAI] = None):
+    def __init__(self, llm: Optional[ChatOpenAI] = None, proactive: bool = True):
         """
         Initialize the tutor agent.
 
         Args:
             llm: Optional pre-configured LLM instance
+            proactive: If True, use proactive tutor mode that drives conversation
         """
         self.llm = llm or get_llm(temperature=0.7)
-        self.system_prompt = TUTOR_SYSTEM_PROMPT
+        self.proactive = proactive
+        self.system_prompt = PROACTIVE_TUTOR_SYSTEM_PROMPT if proactive else TUTOR_SYSTEM_PROMPT
+        self.conversation_history: List[tuple[str, str]] = []  # (user_message, assistant_message)
 
     def ask(self, question: str) -> str:
         """
@@ -47,6 +50,75 @@ class TutorAgent:
 
         response = self.llm.invoke(messages)
         return response.content
+
+    def ask_proactive(self, question: str, follow_up: bool = True) -> str:
+        """
+        Ask a question with conversation history and get a proactive response.
+
+        This method maintains conversation context and ensures the tutor
+        always ends with a follow-up action or question.
+
+        Args:
+            question: The student's question or input
+            follow_up: If True, ensure response ends with a proactive prompt
+
+        Returns:
+            The tutor's response with proactive follow-up
+        """
+        messages = [SystemMessage(content=self.system_prompt)]
+
+        # Add conversation history
+        for user_msg, assistant_msg in self.conversation_history:
+            messages.append(HumanMessage(content=user_msg))
+            messages.append(AIMessage(content=assistant_msg))
+
+        # Add current question
+        messages.append(HumanMessage(content=question))
+
+        # Get response
+        response = self.llm.invoke(messages)
+        response_content = response.content
+
+        # Store in history
+        self.conversation_history.append((question, response_content))
+
+        return response_content
+
+    def start_conversation(self) -> str:
+        """
+        Start a proactive conversation with an opening greeting.
+
+        Returns:
+            The tutor's opening message
+        """
+        greeting_prompt = """Start the conversation. Greet the student warmly and ask them about their IELTS goals.
+Keep it brief and end with a specific question."""
+        messages = [
+            SystemMessage(content=self.system_prompt),
+            HumanMessage(content=greeting_prompt),
+        ]
+
+        response = self.llm.invoke(messages)
+        response_content = response.content
+
+        # Store in history (the "greeting" counts as a system-initiated exchange)
+        self.conversation_history.append(("", response_content))
+
+        return response_content
+
+    def reset_conversation(self) -> None:
+        """Reset the conversation history."""
+        self.conversation_history.clear()
+
+    def set_proactive(self, proactive: bool) -> None:
+        """
+        Toggle proactive mode.
+
+        Args:
+            proactive: If True, use proactive system prompt
+        """
+        self.proactive = proactive
+        self.system_prompt = PROACTIVE_TUTOR_SYSTEM_PROMPT if proactive else TUTOR_SYSTEM_PROMPT
 
     def ask_with_context(
         self, question: str, context: str, skill: Optional[str] = None
