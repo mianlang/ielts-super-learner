@@ -2,9 +2,13 @@
 
 import os
 import streamlit as st
-from dotenv import load_dotenv
 
-load_dotenv()
+# Load secrets: Streamlit Cloud takes priority, then .env file
+if "ZHIPUAI_API_KEY" in st.secrets:
+    os.environ["ZHIPUAI_API_KEY"] = st.secrets["ZHIPUAI_API_KEY"]
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
 
 from ielts_agent.agents.tutor import TutorAgent
 from ielts_agent.agents.practice import PracticeAgent
