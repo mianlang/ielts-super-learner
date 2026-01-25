@@ -47,3 +47,4 @@ data/*.db-journal
 .DS_Store
 Thumbs.db
 /archive/
+.streamlit/
