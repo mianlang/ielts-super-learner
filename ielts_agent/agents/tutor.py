@@ -99,6 +99,38 @@ class TutorAgent:
 
         return response_content
 
+    def ask_proactive_stream(self, question: str, follow_up: bool = True):
+        """
+        Stream a proactive response with conversation history.
+
+        Yields content chunks as they arrive. Stores complete response in history.
+
+        Args:
+            question: The student's question or input
+            follow_up: If True, ensure response ends with a proactive prompt
+
+        Yields:
+            str: Response content chunks
+        """
+        messages = [SystemMessage(content=self.system_prompt)]
+
+        # Add conversation history
+        for user_msg, assistant_msg in self.conversation_history:
+            messages.append(HumanMessage(content=user_msg))
+            messages.append(AIMessage(content=assistant_msg))
+
+        # Add current question
+        messages.append(HumanMessage(content=question))
+
+        # Stream response and collect full content
+        full_response = ""
+        for chunk in self.llm.stream(messages):
+            full_response += chunk
+            yield chunk
+
+        # Store in history
+        self.conversation_history.append((question, full_response))
+
     def start_conversation(self) -> str:
         """
         Start a proactive conversation with an opening greeting.
@@ -125,6 +157,34 @@ Keep it brief and end with a specific question."""
         self.conversation_history.append(("", response_content))
 
         return response_content
+
+    def start_conversation_stream(self):
+        """
+        Stream a proactive conversation opening greeting.
+
+        Yields:
+            str: Greeting content chunks
+        """
+        if self.harsh:
+            greeting_prompt = """Start the conversation. Command the student's attention immediately.
+Demand their current level and target band score. Assign a first task.
+Be brief, authoritative, and end with a directive."""
+        else:
+            greeting_prompt = """Start the conversation. Greet the student warmly and ask them about their IELTS goals.
+Keep it brief and end with a specific question."""
+        messages = [
+            SystemMessage(content=self.system_prompt),
+            HumanMessage(content=greeting_prompt),
+        ]
+
+        # Stream response and collect full content
+        full_response = ""
+        for chunk in self.llm.stream(messages):
+            full_response += chunk
+            yield chunk
+
+        # Store in history
+        self.conversation_history.append(("", full_response))
 
     def reset_conversation(self) -> None:
         """Reset the conversation history."""
