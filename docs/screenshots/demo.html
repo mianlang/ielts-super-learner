@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IELTS Super Learner - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            background: #1e1e1e;
+            color: #f0f0f0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            pointer-events: none;
+            padding: 40px;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .slide.exit {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        .title-slide {
+            text-align: center;
+        }
+        .title-slide h1 {
+            color: #4ec9b0;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: fadeIn 1.5s ease-out;
+        }
+        .title-slide h2 {
+            color: #888;
+            font-size: 1.5rem;
+            animation: fadeIn 1.5s ease-out 0.3s both;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .terminal {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border: 1px solid #404040;
+            max-width: 700px;
+            width: 100%;
+            margin: 20px;
+        }
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+        .terminal .title {
+            color: #4ec9b0;
+            border-bottom: 1px solid #404040;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .prompt {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        .command {
+            color: #dcdcaa;
+        }
+        .output {
+            color: #f0f0f0;
+            white-space: pre-wrap;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+        .highlight {
+            color: #569cd6;
+        }
+        .success {
+            color: #6a9955;
+        }
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid #4ec9b0;
+            animation: typing 1.5s steps(40, end), blink 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: #4ec9b0; }
+        }
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4ec9b0, #569cd6);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+        }
+        /* Output typing animation */
+        .output-line {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+        .output-line.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Title Slide -->
+        <div class="slide active" data-step="0" data-duration="3000">
+            <div class="title-slide">
+                <h1>IELTS Super Learner</h1>
+                <h2>AI-Powered CLI Tutor</h2>
+            </div>
+        </div>
+
+        <!-- Help Command -->
+        <div class="slide" data-step="1" data-duration="4000">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">1. 查看帮助信息</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent --help</span></div>
+                <div class="output">
+<span class="success">✓</span> Usage: ielts_agent [OPTIONS] COMMAND [ARGS]...
+
+  IELTS Super Learner Agent - AI study companion
+
+Commands:
+  progress  Show learning progress
+  practice  Practice IELTS skills
+  score     Score with AI feedback
+  tutor     Interactive AI tutor
+                </div>
+            </div>
+        </div>
+
+        <!-- Tutor Command -->
+        <div class="slide" data-step="2" data-duration="4500">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">2. 交互式导师</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent tutor</span></div>
+                <div class="output">
+<span class="success">✓</span> Connected to GLM-4
+
+╔════════════════════════════════════════════╗
+║     <span class="highlight">IELTS Super Learner Agent</span>          ║
+╚════════════════════════════════════════════╝
+
+🎓 Hi! I'm your IELTS tutor. Let's practice!
+
+<span class="highlight">Tutor:</span> What would you like to work on today?
+- Writing Task 2
+- Speaking practice
+- Reading strategies
+                </div>
+            </div>
+        </div>
+
+        <!-- Practice Command -->
+        <div class="slide" data-step="3" data-duration="4500">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">3. 写作练习</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent practice writing --task 2</span></div>
+                <div class="output">
+<span class="success">✓</span> Generating Writing Task 2 question...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  <span class="highlight">IELTS Writing Task 2</span>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Some people think that the best way to reduce
+crime is to give longer prison sentences...
+
+Discuss both views and give your opinion.
+Write at least 250 words.
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Command -->
+        <div class="slide" data-step="4" data-duration="4500">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">4. AI 评分</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent score --skill writing</span></div>
+                <div class="output">
+<span class="success">✓</span> Scoring your answer...
+
+<span class="highlight">Overall Band Score: 6.5</span>
+
+┌─────────────────────┬───────┐
+│ Task Response       │  7.0  │
+│ Coherence           │  6.0  │
+│ Lexical Resource    │  6.5  │
+│ Grammatical Range   │  6.5  │
+└─────────────────────┴───────┘
+
+<span class="success">Strengths:</span> Clear position, good vocabulary
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Command -->
+        <div class="slide" data-step="5" data-duration="4500">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">5. 学习进度</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent progress</span></div>
+                <div class="output">
+╔════════════════════════════════════════════╗
+║         <span class="highlight">Your Learning Progress</span>           ║
+╚════════════════════════════════════════════╝
+
+┌──────────────┬──────────┬──────────┐
+│   Skill      │ Practice │  Score   │
+├──────────────┼──────────┼──────────┤
+│ <span class="success">Listening</span>    │    12    │  6.8     │
+│ <span class="success">Reading</span>      │    15    │  7.2     │
+│ <span class="highlight">Writing</span>     │     8    │  6.5     │
+│ <span class="highlight">Speaking</span>    │     5    │  6.0     │
+└──────────────┴──────────┴──────────┘
+
+<span class="success">Keep up the great work! 🎉</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Harsh Mode -->
+        <div class="slide" data-step="6" data-duration="4500">
+            <div class="terminal">
+                <div class="window-controls">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="title">6. 严格模式</div>
+                <div><span class="prompt">$</span> <span class="command">python -m ielts_agent tutor --mode harsh</span></div>
+                <div class="output">
+<span class="success">✓</span> Connecting to IELTS Tutor...
+
+╔════════════════════════════════════════════╗
+║     <span class="highlight">IELTS Super Learner</span>                ║
+║            <span style="color: #ff5f56;">HARSH MODE ⚠️</span>             ║
+╚════════════════════════════════════════════╝
+
+🎖️ LISTEN UP, RECRUIT! 🎖️
+
+Your current scores are PATHETIC. You want band 7?
+Then WORK for it!
+
+<span class="highlight">Tutor:</span> Give me 5 sentences using "nevertheless"
+NOW! Or I'm doubling your workload!
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Slide -->
+        <div class="slide" data-step="7" data-duration="4000">
+            <div class="title-slide">
+                <h1 style="font-size: 2.5rem;">Start Learning Today</h1>
+                <p style="color: #4ec9b0; font-size: 1.2rem; margin-top: 20px;">
+                    python -m ielts_agent tutor
+                </p>
+                <p style="color: #888; margin-top: 40px; font-size: 1rem;">
+                    github.com/mianlang/ielts-super-learner
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="progress-bar" id="progress"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const isCapture = urlParams.get('capture') === 'true';
+
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+        let currentSlide = 0;
+        let totalDuration = 0;
+        let elapsedTime = 0;
+        let fps = 30;
+
+        // Calculate total duration
+        slides.forEach(slide => {
+            totalDuration += parseInt(slide.dataset.duration);
+        });
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i < index) {
+                    slide.classList.add('exit');
+                } else {
+                    slide.classList.remove('exit');
+                }
+            });
+            if (slides[index]) {
+                slides[index].classList.add('active');
+            }
+        }
+
+        function updateProgress() {
+            const percent = Math.min((elapsedTime / totalDuration) * 100, 100);
+            progressBar.style.width = percent + '%';
+        }
+
+        async function playSlideshow() {
+            if (isCapture) {
+                // Signal that page is ready for capture
+                window.demoReady = true;
+                window.totalFrames = Math.ceil(totalDuration / 1000 * fps);
+            }
+
+            for (let i = 0; i < slides.length; i++) {
+                currentSlide = i;
+                showSlide(i);
+                const duration = parseInt(slides[i].dataset.duration);
+
+                // Animate progress through this slide
+                const frames = Math.ceil(duration / 1000 * fps);
+                for (let f = 0; f < frames; f++) {
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            elapsedTime += 1000 / fps;
+                            updateProgress();
+                            resolve();
+                        }, 1000 / fps);
+                    });
+                }
+            }
+
+            // Mark as complete
+            if (isCapture) {
+                window.demoComplete = true;
+            }
+        }
+
+        // Start on load
+        window.addEventListener('load', () => {
+            if (isCapture) {
+                playSlideshow();
+            } else {
+                // Normal mode: auto-play once
+                setTimeout(() => playSlideshow(), 500);
+            }
+        });
+
+        // Keyboard controls for manual viewing
+        document.addEventListener('keydown', (e) => {
+            if (!isCapture) {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    showSlide(currentSlide);
+                } else if (e.key === 'ArrowLeft') {
+                    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                    showSlide(currentSlide);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
