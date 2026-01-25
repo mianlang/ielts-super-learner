@@ -101,9 +101,9 @@ if st.session_state.mode == "tutor":
     # Start conversation button
     if not st.session_state.messages:
         if st.button("🚀 Start Conversation", type="primary"):
-            with st.spinner("Connecting to tutor..."):
-                greeting = st.session_state.tutor.start_conversation()
-                st.session_state.messages.append({"role": "assistant", "content": greeting})
+            with st.chat_message("assistant"):
+                greeting = st.write_stream(st.session_state.tutor.start_conversation_stream())
+            st.session_state.messages.append({"role": "assistant", "content": greeting})
             st.rerun()
 
     # Chat interface
@@ -117,9 +117,7 @@ if st.session_state.mode == "tutor":
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                response = st.session_state.tutor.ask_proactive(prompt)
-                st.markdown(response)
+            response = st.write_stream(st.session_state.tutor.ask_proactive_stream(prompt))
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 # Practice Mode
@@ -130,10 +128,12 @@ elif st.session_state.mode == "practice":
     task = st.selectbox("Select Task", ["1", "2"] if skill in ["writing", "speaking"] else ["N/A"])
 
     if st.button("Generate Question", type="primary"):
+        practice_agent = PracticeAgent()
         with st.spinner("Generating question..."):
-            practice_agent = PracticeAgent()
-            question = practice_agent.generate_question(skill, task=int(task) if task != "N/A" else None)
-            st.session_state.messages.append({"role": "question", "content": question})
+            question = st.write_stream(practice_agent.generate_practice_stream(
+                skill, task=int(task) if task != "N/A" else None
+            ))
+        st.session_state.messages.append({"role": "question", "content": question})
 
     if st.session_state.messages:
         for msg in st.session_state.messages:
@@ -154,20 +154,13 @@ elif st.session_state.mode == "score":
         if answer:
             with st.spinner("Scoring..."):
                 scorer = ScorerAgent()
-                result = scorer.score_answer(skill, answer)
+                result = scorer.score(skill, answer)
 
-                st.success(f"**Band Score: {result.band_score}**")
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Task Response", result.task_response)
-                    st.metric("Coherence", result.coherence)
-                with col2:
-                    st.metric("Lexical Resource", result.lexical_resource)
-                    st.metric("Grammar", result.grammatical_range)
+                band_score = result.get("overall_band_score", 0)
+                st.success(f"**Band Score: {band_score}**")
 
                 st.subheader("Feedback")
-                st.info(result.feedback)
+                st.info(result.get("feedback", "No feedback available."))
         else:
             st.warning("Please enter your answer first.")
 
