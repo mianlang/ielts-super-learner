@@ -29,27 +29,26 @@ console = Console()
 
 def rich_prompt(message: str) -> str:
     """Prompt with Rich styling and proper arrow key support using prompt_toolkit."""
-    # Convert Rich markup to HTML for prompt_toolkit
-    # Rich: [bold yellow]You[/bold yellow] -> HTML: <style fg="ansi_yellow" bold="true">You</style>
+    # prompt_toolkit uses plain color names (yellow, cyan, green, etc.)
     html_message = message
 
     # Simple Rich-to-HTML conversion for common styles
     replacements = [
-        ("[bold yellow]", '<style fg="ansi_yellow" bold="true">'),
+        ("[bold yellow]", '<style fg="yellow" bold="true">'),
         ("[/bold yellow]", '</style>'),
-        ("[bold cyan]", '<style fg="ansi_cyan" bold="true">'),
+        ("[bold cyan]", '<style fg="cyan" bold="true">'),
         ("[/bold cyan]", '</style>'),
-        ("[bold green]", '<style fg="ansi_green" bold="true">'),
+        ("[bold green]", '<style fg="green" bold="true">'),
         ("[/bold green]", '</style>'),
-        ("[yellow]", '<style fg="ansi_yellow">'),
+        ("[yellow]", '<style fg="yellow">'),
         ("[/yellow]", '</style>'),
-        ("[cyan]", '<style fg="ansi_cyan">'),
+        ("[cyan]", '<style fg="cyan">'),
         ("[/cyan]", '</style>'),
-        ("[green]", '<style fg="ansi_green">'),
+        ("[green]", '<style fg="green">'),
         ("[/green]", '</style>'),
         ("[bold]", '<style bold="true">'),
         ("[/bold]", '</style>'),
-        ("[dim]", '<style fg="ansi_black">'),
+        ("[dim]", '<style fg="ansigray">'),
         ("[/dim]", '</style>'),
     ]
 
