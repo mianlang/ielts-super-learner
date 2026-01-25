@@ -1,5 +1,7 @@
 # IELTS Super Learner Agent
 
+(Demo Video)[https://github.com/user-attachments/assets/8a0012c6-fee7-4bdd-b84d-08618383867f]
+
 A CLI-based IELTS learning assistant powered by LangChain and BigModel (智谱AI/GLM).
 
 ## Features
