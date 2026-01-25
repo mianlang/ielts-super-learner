@@ -10,6 +10,9 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 from rich.text import Text
+from prompt_toolkit import prompt as pt_prompt
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.key_binding import KeyBindings
 
 from ielts_agent.config import SKILLS
 from ielts_agent.db import init_db, get_or_create_user, create_session, end_session, save_interaction, update_progress, get_progress, get_user_stats, get_recent_sessions
@@ -22,6 +25,38 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+def rich_prompt(message: str) -> str:
+    """Prompt with Rich styling and proper arrow key support using prompt_toolkit."""
+    # Convert Rich markup to HTML for prompt_toolkit
+    # Rich: [bold yellow]You[/bold yellow] -> HTML: <style fg="ansi_yellow" bold="true">You</style>
+    html_message = message
+
+    # Simple Rich-to-HTML conversion for common styles
+    replacements = [
+        ("[bold yellow]", '<style fg="ansi_yellow" bold="true">'),
+        ("[/bold yellow]", '</style>'),
+        ("[bold cyan]", '<style fg="ansi_cyan" bold="true">'),
+        ("[/bold cyan]", '</style>'),
+        ("[bold green]", '<style fg="ansi_green" bold="true">'),
+        ("[/bold green]", '</style>'),
+        ("[yellow]", '<style fg="ansi_yellow">'),
+        ("[/yellow]", '</style>'),
+        ("[cyan]", '<style fg="ansi_cyan">'),
+        ("[/cyan]", '</style>'),
+        ("[green]", '<style fg="ansi_green">'),
+        ("[/green]", '</style>'),
+        ("[bold]", '<style bold="true">'),
+        ("[/bold]", '</style>'),
+        ("[dim]", '<style fg="ansi_black">'),
+        ("[/dim]", '</style>'),
+    ]
+
+    for old, new in replacements:
+        html_message = html_message.replace(old, new)
+
+    return pt_prompt(HTML(html_message))
 
 
 def get_user(user_name: str = "Student"):
@@ -57,7 +92,7 @@ def tutor(
 
     while True:
         try:
-            user_input = Prompt.ask("\n[bold yellow]You[/bold yellow]")
+            user_input = rich_prompt("\n[bold yellow]You[/bold yellow] ")
 
             if user_input.lower() in ("quit", "exit", "q"):
                 break
@@ -99,6 +134,17 @@ def practice(
     if skill not in SKILLS:
         console.print(f"[red]Invalid skill. Choose from: {', '.join(SKILLS)}[/red]")
         raise typer.Exit(1)
+
+    # Inform user about text-only mode for audio skills
+    if skill in ("listening", "speaking"):
+        console.print(Panel(
+            "[yellow]⚠️  Text-Only Mode[/yellow]\n\n"
+            f"{skill.capitalize()} exercises are currently text-based only. "
+            f"For {skill}, you'll read transcripts instead of audio and type responses instead of speaking. "
+            "Full audio support (TTS/ASR) is planned for future updates.",
+            title="Notice",
+            border_style="yellow"
+        ))
 
     user = get_user(user_name)
     session = create_session(user.id, skill, task)
