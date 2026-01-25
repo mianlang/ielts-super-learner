@@ -1,0 +1,69 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ielts-super-learner"
+version = "0.1.0"
+description = "AI-powered IELTS learning assistant with interactive CLI tutor"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "mianlang", email = "mianlang@foxmail.com" }
+]
+keywords = ["ielts", "learning", "tutor", "ai", "education"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Office/Business",
+]
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "zhipuai>=2.1.5",
+    "python-dotenv>=1.0.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+    "prompt-toolkit>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "playwright>=1.40.0",
+    "pillow>=10.0.0",
+]
+
+[project.scripts]
+ielts-agent = "ielts_agent.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/mianlang/ielts-super-learner"
+Repository = "https://github.com/mianlang/ielts-super-learner"
+Issues = "https://github.com/mianlang/ielts-super-learner/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ielts_agent"]
+
+[tool.hatch.build]
+exclude = [
+    "docs/",
+    "scripts/",
+    ".git*",
+    "*.md",
+    "LICENSE",
+    "requirements.txt",
+    ".env*",
+    "venv/",
+    "dist/",
+    "*.egg-info/",
+]
