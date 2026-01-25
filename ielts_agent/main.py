@@ -33,37 +33,44 @@ def get_user(user_name: str = "Student"):
 @app.command()
 def tutor(
     user_name: str = typer.Option("Student", "--user", "-u", help="User name"),
+    classic: bool = typer.Option(False, "--classic", "-c", help="Use classic reactive mode instead of proactive"),
 ):
-    """Interactive IELTS tutoring - ask questions and get expert answers."""
+    """Interactive IELTS tutoring - a proactive tutor that guides your learning."""
     user = get_user(user_name)
     session = create_session(user.id, "tutoring")
 
+    agent = TutorAgent(proactive=not classic)
+
+    # Tutor starts the conversation with an opening greeting
+    with console.status("[bold green]Starting tutor...[/bold green]"):
+        opening_message = agent.start_conversation()
+
+    # Display opening message
     console.print(Panel(
-        "[bold cyan]Welcome to IELTS Tutor![/bold cyan]\n\n"
-        "Ask me anything about IELTS - test format, strategies, grammar, vocabulary, etc.\n"
-        "Type 'quit' or 'exit' to end the session.",
-        title="IELTS Tutor",
+        opening_message,
+        title="[bold cyan]IELTS Tutor[/bold cyan]",
         border_style="cyan"
     ))
 
-    agent = TutorAgent()
+    # Show hint at the start
+    console.print("[dim]Type 'quit' or 'exit' to end the session.[/dim]")
 
     while True:
         try:
-            question = Prompt.ask("\n[bold yellow]Your question[/bold yellow]")
+            user_input = Prompt.ask("\n[bold yellow]You[/bold yellow]")
 
-            if question.lower() in ("quit", "exit", "q"):
+            if user_input.lower() in ("quit", "exit", "q"):
                 break
 
-            if not question.strip():
+            if not user_input.strip():
                 continue
 
-            # Save user question
-            save_interaction(session.id, "question", question)
+            # Save user input
+            save_interaction(session.id, "question", user_input)
 
-            # Get response
+            # Get response with conversation history
             with console.status("[bold green]Thinking...[/bold green]"):
-                response = agent.ask(question)
+                response = agent.ask_proactive(user_input)
 
             # Save response
             save_interaction(session.id, "answer", response)
@@ -290,7 +297,7 @@ def reset():
     from ielts_agent.config import DB_PATH
 
     console.print(Panel(
-        "[bold red]DANGER: This will DELETE all your progress![/bold red]\n\n"
+        "[bold red]⚠️  DANGER: This will DELETE all your progress![/bold red]\n\n"
         "This action cannot be undone.",
         title="Reset Progress",
         border_style="red"
@@ -320,7 +327,7 @@ def reset():
     try:
         if DB_PATH.exists():
             DB_PATH.unlink()
-            console.print("[bold green]Progress reset successfully![/bold green]")
+            console.print("[bold green]✓ Progress reset successfully![/bold green]")
             console.print("[dim]A fresh database will be created on your next command.[/dim]")
         else:
             console.print("[yellow]No progress data found to delete.[/yellow]")
