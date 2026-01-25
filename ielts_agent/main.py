@@ -68,12 +68,13 @@ def get_user(user_name: str = "Student"):
 def tutor(
     user_name: str = typer.Option("Student", "--user", "-u", help="User name"),
     classic: bool = typer.Option(False, "--classic", "-c", help="Use classic reactive mode instead of proactive"),
+    harsh: bool = typer.Option(False, "--harsh", "-h", help="Use harsh drill instructor mode (authoritative, directive)"),
 ):
     """Interactive IELTS tutoring - a proactive tutor that guides your learning."""
     user = get_user(user_name)
     session = create_session(user.id, "tutoring")
 
-    agent = TutorAgent(proactive=not classic)
+    agent = TutorAgent(proactive=not classic, harsh=harsh)
 
     # Tutor starts the conversation with an opening greeting
     with console.status("[bold green]Starting tutor...[/bold green]"):

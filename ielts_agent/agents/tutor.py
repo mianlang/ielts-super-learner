@@ -6,7 +6,11 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_openai import ChatOpenAI
 
 from ielts_agent.llm.client import get_llm
-from ielts_agent.prompts.ielts_prompts import TUTOR_SYSTEM_PROMPT, PROACTIVE_TUTOR_SYSTEM_PROMPT
+from ielts_agent.prompts.ielts_prompts import (
+    TUTOR_SYSTEM_PROMPT,
+    PROACTIVE_TUTOR_SYSTEM_PROMPT,
+    HARSH_TUTOR_SYSTEM_PROMPT,
+)
 
 
 class TutorAgent:
@@ -20,18 +24,29 @@ class TutorAgent:
     - Study techniques and tips
     """
 
-    def __init__(self, llm: Optional[ChatOpenAI] = None, proactive: bool = True):
+    def __init__(self, llm: Optional[ChatOpenAI] = None, proactive: bool = True, harsh: bool = False):
         """
         Initialize the tutor agent.
 
         Args:
             llm: Optional pre-configured LLM instance
             proactive: If True, use proactive tutor mode that drives conversation
+            harsh: If True, use harsh drill instructor mode (authoritative, directive)
         """
         self.llm = llm or get_llm(temperature=0.7)
         self.proactive = proactive
-        self.system_prompt = PROACTIVE_TUTOR_SYSTEM_PROMPT if proactive else TUTOR_SYSTEM_PROMPT
+        self.harsh = harsh
+        self.system_prompt = self._select_system_prompt(proactive, harsh)
         self.conversation_history: List[tuple[str, str]] = []  # (user_message, assistant_message)
+
+    def _select_system_prompt(self, proactive: bool, harsh: bool) -> str:
+        """Select the appropriate system prompt based on mode."""
+        if harsh:
+            return HARSH_TUTOR_SYSTEM_PROMPT
+        elif proactive:
+            return PROACTIVE_TUTOR_SYSTEM_PROMPT
+        else:
+            return TUTOR_SYSTEM_PROMPT
 
     def ask(self, question: str) -> str:
         """
@@ -91,7 +106,12 @@ class TutorAgent:
         Returns:
             The tutor's opening message
         """
-        greeting_prompt = """Start the conversation. Greet the student warmly and ask them about their IELTS goals.
+        if self.harsh:
+            greeting_prompt = """Start the conversation. Command the student's attention immediately.
+Demand their current level and target band score. Assign a first task.
+Be brief, authoritative, and end with a directive."""
+        else:
+            greeting_prompt = """Start the conversation. Greet the student warmly and ask them about their IELTS goals.
 Keep it brief and end with a specific question."""
         messages = [
             SystemMessage(content=self.system_prompt),
@@ -118,7 +138,17 @@ Keep it brief and end with a specific question."""
             proactive: If True, use proactive system prompt
         """
         self.proactive = proactive
-        self.system_prompt = PROACTIVE_TUTOR_SYSTEM_PROMPT if proactive else TUTOR_SYSTEM_PROMPT
+        self.system_prompt = self._select_system_prompt(proactive, self.harsh)
+
+    def set_harsh(self, harsh: bool) -> None:
+        """
+        Toggle harsh mode.
+
+        Args:
+            harsh: If True, use harsh drill instructor prompt
+        """
+        self.harsh = harsh
+        self.system_prompt = self._select_system_prompt(self.proactive, harsh)
 
     def ask_with_context(
         self, question: str, context: str, skill: Optional[str] = None
