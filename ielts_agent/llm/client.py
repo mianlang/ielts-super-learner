@@ -36,9 +36,8 @@ class SimpleLLM:
         self.temperature = temperature
         self.client = _get_client()
 
-    def invoke(self, messages):
-        """Invoke the LLM with messages."""
-        # Convert LangChain messages to dict format
+    def _prepare_messages(self, messages):
+        """Convert messages to API format."""
         api_messages = []
         for msg in messages:
             if hasattr(msg, 'content'):
@@ -46,14 +45,44 @@ class SimpleLLM:
                 api_messages.append({"role": role, "content": str(msg.content)})
             else:
                 api_messages.append({"role": "user", "content": str(msg)})
+        return api_messages
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=api_messages,
-            temperature=self.temperature,
-        )
+    def invoke(self, messages):
+        """Invoke the LLM with messages (non-streaming)."""
+        api_messages = self._prepare_messages(messages)
 
-        return SimpleResponse(response.choices[0].message.content)
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=api_messages,
+                temperature=self.temperature,
+                timeout=60.0,
+            )
+            return SimpleResponse(response.choices[0].message.content)
+        except Exception as e:
+            return SimpleResponse(f"Error generating response: {str(e)}")
+
+    def stream(self, messages):
+        """Stream the LLM response with timeout and error handling.
+
+        Yields:
+            str: Content chunks as they arrive from the API
+        """
+        api_messages = self._prepare_messages(messages)
+
+        try:
+            stream_response = self.client.chat.completions.create(
+                model=self.model,
+                messages=api_messages,
+                temperature=self.temperature,
+                timeout=60.0,
+                stream=True,
+            )
+            for chunk in stream_response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            yield f"\n\n[Error: {str(e)}]"
 
 
 class SimpleResponse:
