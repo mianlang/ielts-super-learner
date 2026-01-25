@@ -49,6 +49,19 @@ class PracticeAgent:
         response = self.llm.invoke(messages)
         return response.content
 
+    def _generate_stream(self, prompt: str):
+        """Stream a practice question generation.
+
+        Yields:
+            str: Content chunks as they arrive
+        """
+        messages = [
+            SystemMessage(content=self.system_prompt),
+            HumanMessage(content=prompt),
+        ]
+        for chunk in self.llm.stream(messages):
+            yield chunk
+
     def generate_listening(self, section: int = 1) -> str:
         """
         Generate a listening practice exercise.
@@ -253,3 +266,132 @@ Choose any appropriate visual type (line graph, bar chart, pie chart, table, pro
 
         else:
             return f"Unknown skill: {skill}. Use listening, reading, writing, or speaking."
+
+    def generate_practice_stream(self, skill: str, task: Optional[int] = None, **kwargs):
+        """
+        Stream a practice question generation based on skill and optional task.
+
+        Args:
+            skill: One of listening, reading, writing, speaking
+            task: Task number (for writing/speaking)
+            **kwargs: Additional parameters (topic, essay_type, etc.)
+
+        Yields:
+            str: Content chunks as they arrive
+        """
+        skill = skill.lower()
+
+        if skill == "listening":
+            section = kwargs.get("section", 1)
+            prompt = self._get_listening_prompt(section)
+            yield from self._generate_stream(prompt)
+
+        elif skill == "reading":
+            topic = kwargs.get("topic")
+            prompt = self._get_reading_prompt(topic)
+            yield from self._generate_stream(prompt)
+
+        elif skill == "writing":
+            if task == 1:
+                task_type = kwargs.get("task_type")
+                prompt = self._get_writing_task1_prompt(task_type)
+            else:
+                topic = kwargs.get("topic")
+                essay_type = kwargs.get("essay_type")
+                prompt = self._get_writing_task2_prompt(topic, essay_type)
+            yield from self._generate_stream(prompt)
+
+        elif skill == "speaking":
+            topic = kwargs.get("topic")
+            if task == 1:
+                prompt = self._get_speaking_part1_prompt(topic)
+            elif task == 2:
+                prompt = self._get_speaking_part2_prompt(topic)
+            else:
+                theme = kwargs.get("theme", topic)
+                prompt = self._get_speaking_part3_prompt(theme)
+            yield from self._generate_stream(prompt)
+
+        else:
+            yield f"Unknown skill: {skill}. Use listening, reading, writing, or speaking."
+
+    def _get_listening_prompt(self, section: int) -> str:
+        """Get the listening generation prompt."""
+        section_descriptions = {
+            1: "a conversation between two people in an everyday social context",
+            2: "a monologue set in an everyday social context",
+            3: "a conversation between up to four people in an educational or training context",
+            4: "a monologue on an academic subject",
+        }
+        context = section_descriptions.get(section, section_descriptions[1])
+        return f"""Generate an IELTS Listening Section {section} practice exercise.
+
+This section should feature {context}.
+
+Include:
+1. A brief description of the audio context (what the student would hear)
+2. The transcript (200-300 words)
+3. 5-6 questions in appropriate IELTS listening format
+4. An answer key
+
+Format the questions realistically as they would appear on the actual test."""
+
+    def _get_reading_prompt(self, topic: Optional[str] = None) -> str:
+        """Get the reading generation prompt."""
+        topic_hint = f" on the topic of {topic}" if topic else ""
+        return f"""Generate an IELTS Academic reading practice exercise{topic_hint}.
+
+Include:
+1. An authentic reading passage (700-800 words) with an academic tone
+2. 6-8 comprehension questions using at least two different question types:
+   - True/False/Not Given
+   - Multiple choice
+   - Matching headings
+   - Sentence completion
+   - Summary completion
+3. An answer key with brief explanations
+
+Make sure the passage and questions are at an authentic IELTS level (Band 6-8)."""
+
+    def _get_writing_task1_prompt(self, task_type: Optional[str] = None) -> str:
+        """Get the Writing Task 1 generation prompt."""
+        if task_type:
+            return f"""Generate an IELTS Academic Writing Task 1 question
+based on a {task_type}.
+
+{WRITING_TASK_1_PROMPT_TEMPLATE}"""
+        else:
+            return f"""Generate an IELTS Academic Writing Task 1 question.
+
+Choose any appropriate visual type (line graph, bar chart, pie chart, table, process diagram, or map).
+
+{WRITING_TASK_1_PROMPT_TEMPLATE}"""
+
+    def _get_writing_task2_prompt(self, topic: Optional[str] = None, essay_type: Optional[str] = None) -> str:
+        """Get the Writing Task 2 generation prompt."""
+        topic_hint = f" related to {topic}" if topic else ""
+        type_hint = f" This should be a {essay_type} essay." if essay_type else ""
+        return f"""Generate an IELTS Writing Task 2 essay prompt{topic_hint}.{type_hint}
+
+{WRITING_TASK_2_PROMPT_TEMPLATE}"""
+
+    def _get_speaking_part1_prompt(self, topic: Optional[str] = None) -> str:
+        """Get the Speaking Part 1 generation prompt."""
+        topic_hint = f" on the topic of {topic}" if topic else " on a common Part 1 topic"
+        return f"""Generate IELTS Speaking Part 1 practice questions{topic_hint}.
+
+{SPEAKING_PART_1_PROMPT_TEMPLATE}"""
+
+    def _get_speaking_part2_prompt(self, topic: Optional[str] = None) -> str:
+        """Get the Speaking Part 2 generation prompt."""
+        topic_hint = f" related to {topic}" if topic else ""
+        return f"""Generate an IELTS Speaking Part 2 task card{topic_hint}.
+
+{SPEAKING_PART_2_PROMPT_TEMPLATE}"""
+
+    def _get_speaking_part3_prompt(self, theme: Optional[str] = None) -> str:
+        """Get the Speaking Part 3 generation prompt."""
+        theme_hint = f" on the theme of {theme}" if theme else ""
+        return f"""Generate IELTS Speaking Part 3 discussion questions{theme_hint}.
+
+{SPEAKING_PART_3_PROMPT_TEMPLATE}"""
