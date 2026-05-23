@@ -80,6 +80,18 @@ def init_db() -> None:
     """
     )
 
+    # Learner profile table (one JSON blob per user — the Coach's memory).
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS profiles (
+            user_id INTEGER PRIMARY KEY,
+            data TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """
+    )
+
     conn.commit()
     conn.close()
 
@@ -346,3 +358,29 @@ def get_recent_sessions(user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
 
     conn.close()
     return sessions
+
+
+def get_profile_data(user_id: int) -> Optional[str]:
+    """Return the stored learner-profile JSON blob for a user, if any."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT data FROM profiles WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def save_profile_data(user_id: int, data: str) -> None:
+    """Upsert a learner-profile JSON blob for a user."""
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO profiles (user_id, data, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
+        """,
+        (user_id, data, datetime.now().isoformat()),
+    )
+    conn.commit()
+    conn.close()

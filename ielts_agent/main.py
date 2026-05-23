@@ -15,8 +15,9 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
 
 from ielts_agent.config import SKILLS
-from ielts_agent.db import init_db, get_or_create_user, create_session, end_session, save_interaction, update_progress, get_progress, get_user_stats, get_recent_sessions
+from ielts_agent.db import init_db, get_or_create_user, create_session, end_session, save_interaction, update_progress, get_progress, get_user_stats, get_recent_sessions, get_profile_data, save_profile_data
 from ielts_agent.agents import TutorAgent, PracticeAgent, ScorerAgent
+from ielts_agent.profile import LearnerProfile
 
 app = typer.Typer(
     name="ielts",
@@ -64,30 +65,42 @@ def get_user(user_name: str = "Student"):
     return get_or_create_user(user_name)
 
 
+def _render_coach_events(events) -> None:
+    """Print a dim trace of the tools the coach used this turn."""
+    labels = {
+        "generate_practice_question": "generated a practice question",
+        "score_answer": "scored your answer",
+        "update_learner_profile": "updated your profile",
+    }
+    for event in events:
+        console.print(f"[dim]· {labels.get(event['name'], event['name'])}[/dim]")
+
+
 @app.command()
 def tutor(
     user_name: str = typer.Option("Student", "--user", "-u", help="User name"),
-    classic: bool = typer.Option(False, "--classic", "-c", help="Use classic reactive mode instead of proactive"),
-    harsh: bool = typer.Option(False, "--harsh", "-h", help="Use harsh drill instructor mode (authoritative, directive)"),
+    harsh: bool = typer.Option(False, "--harsh", "-h", help="Harsh drill-instructor mode (authoritative, directive)"),
 ):
-    """Interactive IELTS tutoring - a proactive tutor that guides your learning."""
+    """Interactive IELTS coaching - diagnoses your level, then drills your weaknesses."""
     user = get_user(user_name)
-    session = create_session(user.id, "tutoring")
+    session = create_session(user.id, "coaching")
 
-    agent = TutorAgent(proactive=not classic, harsh=harsh)
+    # Load the persisted learner profile (the coach's memory across sessions).
+    profile = LearnerProfile.from_json(get_profile_data(user.id))
+    if user_name != "Student" and profile.name == "Student":
+        profile.name = user_name
 
-    # Tutor starts the conversation with an opening greeting
-    with console.status("[bold green]Starting tutor...[/bold green]"):
-        opening_message = agent.start_conversation()
+    agent = TutorAgent(profile=profile, harsh=harsh)
 
-    # Display opening message
+    # Coach opens: greets, then runs the diagnostic or welcomes a returning student.
+    with console.status("[bold green]Starting your coach...[/bold green]"):
+        opening = agent.start()
+    _render_coach_events(opening["events"])
     console.print(Panel(
-        opening_message,
-        title="[bold cyan]IELTS Tutor[/bold cyan]",
-        border_style="cyan"
+        opening["content"],
+        title="[bold cyan]IELTS Coach[/bold cyan]",
+        border_style="cyan",
     ))
-
-    # Show hint at the start
     console.print("[dim]Type 'quit' or 'exit' to end the session.[/dim]")
 
     while True:
@@ -100,26 +113,26 @@ def tutor(
             if not user_input.strip():
                 continue
 
-            # Save user input
             save_interaction(session.id, "question", user_input)
 
-            # Get response with conversation history
-            with console.status("[bold green]Thinking...[/bold green]"):
-                response = agent.ask_proactive(user_input)
+            with console.status("[bold green]Coaching...[/bold green]"):
+                result = agent.chat(user_input)
 
-            # Save response
-            save_interaction(session.id, "answer", response)
+            _render_coach_events(result["events"])
+            save_interaction(session.id, "answer", result["content"])
+            console.print(Panel(result["content"], title="[bold green]Coach[/bold green]", border_style="green"))
 
-            # Display response
-            console.print(Panel(response, title="[bold green]Tutor[/bold green]", border_style="green"))
+            # Persist the profile after every turn so progress is never lost.
+            save_profile_data(user.id, agent.profile.to_json())
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Interrupted. Type 'quit' to exit.[/yellow]")
         except Exception as e:
             console.print(f"[red]Error: {e}[/red]")
 
+    save_profile_data(user.id, agent.profile.to_json())
     end_session(session.id)
-    console.print(f"[bold green]Session ended! Good luck with your IELTS preparation, {user_name}![/bold green]")
+    console.print(f"[bold green]Session saved! Good luck with your IELTS preparation, {user_name}![/bold green]")
 
 
 @app.command()

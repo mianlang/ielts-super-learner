@@ -10,6 +10,8 @@ from .schema import (
     end_session,
     update_progress,
     get_recent_sessions,
+    get_profile_data,
+    save_profile_data,
 )
 from .models import User, Session, Interaction, Progress
 
@@ -23,6 +25,8 @@ __all__ = [
     "end_session",
     "update_progress",
     "get_recent_sessions",
+    "get_profile_data",
+    "save_profile_data",
     "User",
     "Session",
     "Interaction",
