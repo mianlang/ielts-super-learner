@@ -2,18 +2,14 @@
 
 https://github.com/user-attachments/assets/8a0012c6-fee7-4bdd-b84d-08618383867f
 
-A CLI-based IELTS learning assistant powered by LangChain and BigModel (智谱AI/GLM).
+A CLI + web IELTS learning assistant powered by ZhipuAI **GLM-5.1**. The web app's **Coach** mode runs a real coached loop: it diagnoses your level, then drills your weaknesses by orchestrating practice generation and scoring as GLM tools — all backed by a learner profile that persists in your browser. Live demo: https://ielts-super-learner.streamlit.app/
 
 ## Features
 
-- **Interactive Tutoring**: Ask questions about IELTS concepts, grammar, vocabulary, and strategies
-- **Practice Generation**: Generate practice questions for all 4 IELTS skills
-  - Listening
-  - Reading
-  - Writing Task 1 & 2
-  - Speaking Part 1, 2, & 3
-- **AI Scoring**: Get band scores and feedback based on official IELTS rubrics
-- **Progress Tracking**: Track your practice history and improvement over time
+- **🧑‍🏫 AI Coach** (web): a GLM-5.1 orchestrator that runs a first-contact diagnostic, builds a learner profile (current/target band, exam date, weaknesses), then drills your weakest area by calling Practice + Score as tools. Your profile persists in your browser (localStorage).
+- **🎯 Practice Generation**: authentic questions for all 4 skills — Listening, Reading, Writing Task 1 & 2, Speaking Parts 1–3 — with one-click scoring of your answer.
+- **📊 AI Scoring**: band scores + criterion-by-criterion feedback for Writing & Speaking, scored against the question using official IELTS band descriptors.
+- **📈 Progress Tracking**: practice history and band trend over time.
 
 ## Installation
 
@@ -38,10 +34,16 @@ cp .env.example .env
 
 ## Usage
 
-### Interactive Tutoring
-Ask questions about IELTS concepts:
+### Web app (Coach / Practice / Score)
 ```bash
-python -m ielts_agent tutor
+streamlit run streamlit_app.py
+```
+The **Coach** greets you, runs a quick diagnostic, then drills your weakest skill — calling Practice and Score behind the scenes and remembering your profile across sessions (stored in your browser).
+
+### Interactive Coaching (CLI)
+A coach that diagnoses your level, then drills your weaknesses:
+```bash
+python -m ielts_agent tutor            # add --harsh for drill-instructor mode
 ```
 
 ### Generate Practice Questions
@@ -80,17 +82,20 @@ python -m ielts_agent progress
 
 ```
 ielts/
+├── streamlit_app.py         # Web app: Coach / Practice / Score
 ├── ielts_agent/
 │   ├── main.py              # CLI entry point
 │   ├── config.py            # Configuration & env loading
+│   ├── profile.py           # LearnerProfile (the coach's memory)
 │   ├── llm/
-│   │   └── client.py        # BigModel LLM wrapper
+│   │   ├── client.py        # GLM-5.1 client: thinking + tool calling
+│   │   └── messages.py      # Lightweight chat message types
 │   ├── agents/
-│   │   ├── tutor.py         # Q&A tutoring agent
+│   │   ├── tutor.py         # Coach orchestrator (tool-calling loop)
 │   │   ├── practice.py      # Practice question generator
 │   │   └── scorer.py        # Answer scoring with IELTS rubrics
 │   ├── db/
-│   │   ├── schema.py        # SQLite schema
+│   │   ├── schema.py        # SQLite schema (+ profiles table)
 │   │   └── models.py        # Data models
 │   └── prompts/
 │       └── ielts_prompts.py # IELTS-specific system prompts

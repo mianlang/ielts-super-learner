@@ -25,10 +25,10 @@ streamlit run streamlit_app.py           # Web app (Coach / Practice / Score)
 ## Key Patterns
 
 - **LLM Client**: Use `get_llm()` (interactive) or `get_llm_for_scoring()` (scoring) from `llm/client.py`. Native `zhipuai` SDK — no LangChain. Messages are `ielts_agent.llm.messages` objects or OpenAI-format dicts.
-- **Models**: `glm-5.1` everywhere. It's a hybrid-reasoning model: run with **thinking off** for interactive/streaming work (snappy), **thinking on** for scoring (quality). The client handles `reasoning_content`.
+- **Models**: `glm-5.1` everywhere. Hybrid-reasoning model: **thinking off** for interactive/streaming (snappy), **thinking on** for scoring (quality). The client handles `reasoning_content`.
 - **Tool calling**: `SimpleLLM.invoke(messages, tools=...)` returns `LLMResponse` with `.tool_calls`. The Coach (`agents/tutor.py`) runs the tool loop.
 - **Coach orchestrator**: `TutorAgent` calls Practice + Score + profile updates as GLM tools. `start()` greets/diagnoses, `chat()` runs one coached turn; both return `{content, events, profile_changed}`.
-- **Learner profile**: `ielts_agent/profile.py` (`LearnerProfile`). Persisted to SQLite for the CLI (`get_profile_data`/`save_profile_data`) and browser localStorage for the web app. Injected into the Coach's system prompt each turn.
+- **Learner profile**: `ielts_agent/profile.py` (`LearnerProfile`). Persisted to SQLite for the CLI and browser localStorage for the web app. Injected into the Coach's system prompt each turn.
 - **Database**: Every command calls `init_db()`. User lookup/creation happens at start of each command.
 - **Agents**: Instantiated per command in `main.py`, not reused.
 - **Progress**: Call `update_progress(user_id, skill, score)` after scoring.
