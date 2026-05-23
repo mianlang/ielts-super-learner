@@ -2,10 +2,8 @@
 
 from typing import Optional
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
-
-from ielts_agent.llm.client import get_llm
+from ielts_agent.llm.client import get_llm, SimpleLLM
+from ielts_agent.llm.messages import HumanMessage, SystemMessage
 from ielts_agent.prompts.ielts_prompts import (
     PRACTICE_SYSTEM_PROMPT,
     WRITING_TASK_1_PROMPT_TEMPLATE,
@@ -30,7 +28,7 @@ class PracticeAgent:
     - Speaking Parts 1, 2, and 3
     """
 
-    def __init__(self, llm: Optional[ChatOpenAI] = None):
+    def __init__(self, llm: Optional[SimpleLLM] = None):
         """
         Initialize the practice agent.
 

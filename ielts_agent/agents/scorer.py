@@ -4,10 +4,8 @@ import json
 import re
 from typing import Optional, Dict, Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
-
-from ielts_agent.llm.client import get_llm_for_scoring
+from ielts_agent.llm.client import get_llm_for_scoring, SimpleLLM
+from ielts_agent.llm.messages import HumanMessage, SystemMessage
 from ielts_agent.prompts.ielts_prompts import (
     SCORING_SYSTEM_PROMPT,
     WRITING_BAND_DESCRIPTORS,
@@ -23,7 +21,7 @@ class ScorerAgent:
     Scores written and spoken responses against official criteria.
     """
 
-    def __init__(self, llm: Optional[ChatOpenAI] = None):
+    def __init__(self, llm: Optional[SimpleLLM] = None):
         """
         Initialize the scorer agent.
 

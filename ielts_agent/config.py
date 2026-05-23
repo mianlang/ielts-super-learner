@@ -32,8 +32,11 @@ def get_api_key() -> str:
 
 # BigModel API Configuration
 ZHIPUAI_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
-DEFAULT_MODEL = "glm-4-flash"  # Fast and cost-effective
-ALTERNATIVE_MODEL = "glm-4-plus"  # Higher quality for scoring
+# GLM-5.1 is a hybrid-reasoning model. We run it with "thinking" disabled for
+# interactive/streaming work (snappy) and enabled for scoring (higher quality).
+DEFAULT_MODEL = "glm-5.1"  # Interactive: tutoring, practice generation, orchestration
+SCORING_MODEL = "glm-5.1"  # Scoring: reasoning enabled for consistent band judgments
+FALLBACK_MODEL = "glm-4.6"  # Non-reasoning fallback if GLM-5.1 is unavailable
 
 # Project Paths
 PROJECT_ROOT = Path(__file__).parent.parent
